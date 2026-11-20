@@ -4,6 +4,8 @@ import {
   LinkCategory,
 } from '../types/club';
 
+const BASE_URL = import.meta.env.BASE_URL;
+
 export const CLUB_PROFILE = {
   shortBrand: 'نادي UFC ولاية البيض',
   fullName: 'النادي الرياضي الهاوي UFC للفنون القتالية المختلطة — ولاية البيض',
@@ -11,8 +13,8 @@ export const CLUB_PROFILE = {
   joinSectionId: 'ufc-join',
   tagline: 'تدريب قتالي منظم للهواة والناشئين في الفنون القتالية المختلطة، الكيك بوكسينغ، المواي تاي والمصارعة الحرة وفق معايير السلامة الاتحادية.',
   metadataLine: 'فنون قتالية مختلطة · كيك بوكسينغ · مواي تاي · مصارعة حرة',
-  heroImage: '/assets/aistudio/image_38bdcfb0_ef0038c2.jpg',
-  avatarImage: '/src/assets/images/club_emblem_avatar_1794956486557.jpg',
+  heroImage: `${BASE_URL}assets/aistudio/image_38bdcfb0_ef0038c2.jpg`,
+  avatarImage: `${BASE_URL}src/assets/images/club_emblem_avatar_1794956486557.jpg`,
   stats: [
     { label: 'مقاتل ومتدرب نشط', value: '420+' },
     { label: 'بطولة هواة محلية', value: '14' },
