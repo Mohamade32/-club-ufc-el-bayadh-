@@ -1,0 +1,276 @@
+{
+  "entities": {
+    "AthleteProfile": {
+      "title": "AthleteProfile",
+      "description": "Registered amateur MMA athlete profile stored in Firestore with strict PII isolation and review status.",
+      "type": "object",
+      "properties": {
+        "ownerUid": {
+          "type": "string",
+          "description": "Authenticated Firebase UID of the athlete",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "athleteCode": {
+          "type": "string",
+          "description": "Unique club registration code (e.g. UFC-ATH-1042)",
+          "minLength": 6,
+          "maxLength": 32,
+          "pattern": "^UFC-ATH-[0-9]{4,6}$"
+        },
+        "fullName": {
+          "type": "string",
+          "description": "Full legal name of the athlete",
+          "minLength": 3,
+          "maxLength": 120
+        },
+        "birthDate": {
+          "type": "string",
+          "format": "date",
+          "description": "Date of birth in YYYY-MM-DD format",
+          "minLength": 10,
+          "maxLength": 10,
+          "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$"
+        },
+        "ageYears": {
+          "type": "integer",
+          "description": "Calculated age in years at registration"
+        },
+        "gender": {
+          "type": "string",
+          "enum": ["ذكر", "أنثى"],
+          "description": "Gender of the athlete",
+          "minLength": 2,
+          "maxLength": 10
+        },
+        "bloodType": {
+          "type": "string",
+          "enum": ["O+", "O-", "A+", "A-", "B+", "B-", "AB+", "AB-"],
+          "description": "Blood type of the athlete",
+          "minLength": 2,
+          "maxLength": 4
+        },
+        "address": {
+          "type": "string",
+          "description": "Residential address",
+          "minLength": 4,
+          "maxLength": 240
+        },
+        "phone": {
+          "type": "string",
+          "description": "Contact phone number",
+          "minLength": 8,
+          "maxLength": 20,
+          "pattern": "^\\+?[0-9]{8,15}$"
+        },
+        "photoDataUrl": {
+          "type": "string",
+          "description": "Compressed athlete portrait thumbnail data URL (bounded well below Firestore limit)",
+          "minLength": 20,
+          "maxLength": 260000
+        },
+        "status": {
+          "type": "string",
+          "enum": ["pending", "approved", "rejected"],
+          "description": "Club review status",
+          "minLength": 6,
+          "maxLength": 16
+        },
+        "reviewNote": {
+          "type": "string",
+          "description": "Optional note from club administration",
+          "maxLength": 300
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server timestamp of creation"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server timestamp of last update"
+        }
+      },
+      "required": [
+        "ownerUid",
+        "athleteCode",
+        "fullName",
+        "birthDate",
+        "ageYears",
+        "gender",
+        "bloodType",
+        "address",
+        "phone",
+        "photoDataUrl",
+        "status",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    "AthleteDocument": {
+      "title": "AthleteDocument",
+      "description": "Metadata and bounded preview for an athlete's uploaded official document.",
+      "type": "object",
+      "properties": {
+        "ownerUid": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "docType": {
+          "type": "string",
+          "enum": ["birth_certificate", "medical_certificate", "national_id", "parental_consent"],
+          "minLength": 5,
+          "maxLength": 32
+        },
+        "fileName": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 180
+        },
+        "mimeType": {
+          "type": "string",
+          "minLength": 3,
+          "maxLength": 80
+        },
+        "sizeBytes": {
+          "type": "integer"
+        },
+        "sha256": {
+          "type": "string",
+          "minLength": 16,
+          "maxLength": 128
+        },
+        "previewDataUrl": {
+          "type": "string",
+          "maxLength": 320000
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "ownerUid",
+        "docType",
+        "fileName",
+        "mimeType",
+        "sizeBytes",
+        "sha256",
+        "updatedAt"
+      ]
+    },
+    "ClubLinkItem": {
+      "title": "ClubLinkItem",
+      "description": "Public official club link item managed by club administrators.",
+      "type": "object",
+      "properties": {
+        "title": {
+          "type": "string",
+          "minLength": 2,
+          "maxLength": 120
+        },
+        "subtitle": {
+          "type": "string",
+          "maxLength": 240
+        },
+        "category": {
+          "type": "string",
+          "enum": ["registration", "training", "tournaments", "community"],
+          "minLength": 4,
+          "maxLength": 32
+        },
+        "categoryLabel": {
+          "type": "string",
+          "minLength": 2,
+          "maxLength": 60
+        },
+        "actionType": {
+          "type": "string",
+          "enum": ["external", "scroll", "modal"],
+          "minLength": 4,
+          "maxLength": 16
+        },
+        "url": {
+          "type": "string",
+          "maxLength": 500
+        },
+        "targetSectionId": {
+          "type": "string",
+          "maxLength": 64
+        },
+        "modalId": {
+          "type": "string",
+          "maxLength": 32
+        },
+        "featured": {
+          "type": "boolean"
+        },
+        "active": {
+          "type": "boolean"
+        },
+        "sortOrder": {
+          "type": "integer"
+        },
+        "iconKey": {
+          "type": "string",
+          "minLength": 2,
+          "maxLength": 32
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "title",
+        "subtitle",
+        "category",
+        "categoryLabel",
+        "actionType",
+        "active",
+        "sortOrder",
+        "iconKey",
+        "updatedAt"
+      ]
+    },
+    "AdminUser": {
+      "title": "AdminUser",
+      "description": "Trusted club administrator marker document.",
+      "type": "object",
+      "properties": {
+        "email": {
+          "type": "string",
+          "format": "email",
+          "maxLength": 160
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": ["email", "createdAt"]
+    }
+  },
+  "firestore": {
+    "/athletes/{athleteId}": {
+      "schema": { "$ref": "#/entities/AthleteProfile" },
+      "description": "Stores each registered athlete's personal details, portrait thumbnail, and club approval status keyed by Firebase UID."
+    },
+    "/athletes/{athleteId}/documents/{docKey}": {
+      "schema": { "$ref": "#/entities/AthleteDocument" },
+      "description": "Stores verified metadata and bounded preview for each uploaded official document (birth certificate, medical certificate, national ID, parental consent)."
+    },
+    "/clubLinks/{linkId}": {
+      "schema": { "$ref": "#/entities/ClubLinkItem" },
+      "description": "Stores the club's official Linktree-style bio links managed by admins and read by visitors."
+    },
+    "/admins/{adminId}": {
+      "schema": { "$ref": "#/entities/AdminUser" },
+      "description": "Trusted administrator lookup collection."
+    }
+  }
+}

@@ -1,0 +1,6 @@
+{
+  "name": "النادي الرياضي الهاوي UFC للفنون القتالية المختلطة",
+  "description": "منصة الروابط الرسمية وبوابة التسجيل والتدريب للنادي الرياضي الهاوي UFC للفنون القتالية المختلطة.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

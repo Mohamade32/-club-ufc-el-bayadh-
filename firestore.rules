@@ -1,0 +1,287 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Global safety net: default deny
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // --- Global Helpers ---
+    function isValidId(id) {
+      return id is string && id.size() >= 1 && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isVerifiedUser() {
+      return isSignedIn() && request.auth.token.email_verified == true;
+    }
+
+    function isOwner(uid) {
+      return isVerifiedUser() && request.auth.uid == uid;
+    }
+
+    function isAdmin() {
+      return isVerifiedUser() && (
+        request.auth.token.email == 'min.nas1207@gmail.com' ||
+        exists(/databases/$(database)/documents/admins/$(request.auth.uid))
+      );
+    }
+
+    // --- Validation Blueprints ---
+    function isValidAthleteData(data) {
+      return data.keys().hasAll([
+        'ownerUid',
+        'athleteCode',
+        'fullName',
+        'birthDate',
+        'ageYears',
+        'gender',
+        'bloodType',
+        'address',
+        'phone',
+        'photoDataUrl',
+        'status',
+        'createdAt',
+        'updatedAt'
+      ])
+      && data.keys().hasOnly([
+        'ownerUid',
+        'athleteCode',
+        'fullName',
+        'birthDate',
+        'ageYears',
+        'gender',
+        'bloodType',
+        'address',
+        'phone',
+        'photoDataUrl',
+        'status',
+        'reviewNote',
+        'createdAt',
+        'updatedAt'
+      ])
+      && data.ownerUid is string && data.ownerUid.size() >= 1 && data.ownerUid.size() <= 128 && data.ownerUid.matches('^[a-zA-Z0-9_\\-]+$')
+      && data.athleteCode is string && data.athleteCode.size() >= 6 && data.athleteCode.size() <= 32 && data.athleteCode.matches('^UFC-ATH-[0-9]{4,6}$')
+      && data.fullName is string && data.fullName.size() >= 3 && data.fullName.size() <= 120
+      && data.birthDate is string && data.birthDate.size() == 10 && data.birthDate.matches('^[0-9]{4}-[0-9]{2}-[0-9]{2}$')
+      && data.ageYears is int && data.ageYears >= 5 && data.ageYears <= 95
+      && data.gender is string && data.gender in ['ذكر', 'أنثى']
+      && data.bloodType is string && data.bloodType in ['O+', 'O-', 'A+', 'A-', 'B+', 'B-', 'AB+', 'AB-']
+      && data.address is string && data.address.size() >= 4 && data.address.size() <= 240
+      && data.phone is string && data.phone.size() >= 8 && data.phone.size() <= 20 && data.phone.matches('^\\+?[0-9]{8,15}$')
+      && data.photoDataUrl is string && data.photoDataUrl.size() >= 20 && data.photoDataUrl.size() <= 260000
+      && data.status is string && data.status in ['pending', 'approved', 'rejected']
+      && (!('reviewNote' in data) || (data.reviewNote is string && data.reviewNote.size() <= 300))
+      && data.createdAt is timestamp
+      && data.updatedAt is timestamp;
+    }
+
+    function isValidAthleteDocData(data, athleteId) {
+      return data.keys().hasAll([
+        'ownerUid',
+        'docType',
+        'fileName',
+        'mimeType',
+        'sizeBytes',
+        'sha256',
+        'updatedAt'
+      ])
+      && data.keys().hasOnly([
+        'ownerUid',
+        'docType',
+        'fileName',
+        'mimeType',
+        'sizeBytes',
+        'sha256',
+        'previewDataUrl',
+        'updatedAt'
+      ])
+      && data.ownerUid is string && data.ownerUid == athleteId && data.ownerUid.size() <= 128
+      && data.docType is string && data.docType in ['birth_certificate', 'medical_certificate', 'national_id', 'parental_consent']
+      && data.fileName is string && data.fileName.size() >= 1 && data.fileName.size() <= 180
+      && data.mimeType is string && data.mimeType.size() >= 3 && data.mimeType.size() <= 80
+      && data.sizeBytes is int && data.sizeBytes > 0 && data.sizeBytes <= 10485760
+      && data.sha256 is string && data.sha256.size() >= 16 && data.sha256.size() <= 128
+      && (!('previewDataUrl' in data) || (data.previewDataUrl is string && data.previewDataUrl.size() <= 320000))
+      && data.updatedAt is timestamp;
+    }
+
+    function isValidClubLinkData(data) {
+      return data.keys().hasAll([
+        'title',
+        'subtitle',
+        'category',
+        'categoryLabel',
+        'actionType',
+        'active',
+        'sortOrder',
+        'iconKey',
+        'updatedAt'
+      ])
+      && data.keys().hasOnly([
+        'title',
+        'subtitle',
+        'category',
+        'categoryLabel',
+        'actionType',
+        'url',
+        'targetSectionId',
+        'modalId',
+        'featured',
+        'active',
+        'sortOrder',
+        'iconKey',
+        'updatedAt'
+      ])
+      && data.title is string && data.title.size() >= 2 && data.title.size() <= 120
+      && data.subtitle is string && data.subtitle.size() <= 240
+      && data.category is string && data.category in ['registration', 'training', 'tournaments', 'community']
+      && data.categoryLabel is string && data.categoryLabel.size() >= 2 && data.categoryLabel.size() <= 60
+      && data.actionType is string && data.actionType in ['external', 'scroll', 'modal']
+      && (!('url' in data) || (data.url is string && data.url.size() <= 500))
+      && (!('targetSectionId' in data) || (data.targetSectionId is string && data.targetSectionId.size() <= 64))
+      && (!('modalId' in data) || (data.modalId is string && data.modalId.size() <= 32))
+      && (!('featured' in data) || data.featured is bool)
+      && data.active is bool
+      && data.sortOrder is int && data.sortOrder >= 0 && data.sortOrder <= 1000
+      && data.iconKey is string && data.iconKey.size() >= 2 && data.iconKey.size() <= 32
+      && data.updatedAt is timestamp;
+    }
+
+    // --- Collection Rules ---
+
+    // Admins lookup collection (read-only for owner or admins, never writable by clients)
+    match /admins/{adminId} {
+      allow get: if isValidId(adminId) && (isOwner(adminId) || isAdmin());
+      allow list, create, update, delete: if false;
+    }
+
+    // Athletes PII profiles
+    match /athletes/{athleteId} {
+      allow get: if isValidId(athleteId) && (isOwner(athleteId) || isAdmin());
+      allow list: if (isVerifiedUser() && resource.data.ownerUid == request.auth.uid) || isAdmin();
+
+      allow create: if isVerifiedUser()
+        && isValidId(athleteId)
+        && athleteId == request.auth.uid
+        && isValidAthleteData(incoming())
+        && incoming().ownerUid == request.auth.uid
+        && incoming().status == 'pending'
+        && !('reviewNote' in incoming())
+        && incoming().createdAt == request.time
+        && incoming().updatedAt == request.time;
+
+      allow update: if isVerifiedUser()
+        && isValidId(athleteId)
+        && isValidAthleteData(incoming())
+        && incoming().ownerUid == existing().ownerUid
+        && incoming().athleteCode == existing().athleteCode
+        && incoming().createdAt == existing().createdAt
+        && incoming().updatedAt == request.time
+        && (
+          (
+            isAdmin()
+            && incoming().diff(existing()).affectedKeys().hasOnly(['status', 'reviewNote', 'updatedAt'])
+          )
+          ||
+          (
+            isOwner(athleteId)
+            && existing().status != 'approved'
+            && incoming().status == 'pending'
+            && incoming().diff(existing()).affectedKeys().hasOnly([
+              'fullName',
+              'birthDate',
+              'ageYears',
+              'gender',
+              'bloodType',
+              'address',
+              'phone',
+              'photoDataUrl',
+              'status',
+              'updatedAt'
+            ])
+          )
+        );
+
+      allow delete: if isValidId(athleteId) && isAdmin();
+
+      // Athlete official documents subcollection
+      match /documents/{docKey} {
+        allow get: if isValidId(athleteId) && isValidId(docKey) && (isOwner(athleteId) || isAdmin());
+        allow list: if (isVerifiedUser() && resource.data.ownerUid == request.auth.uid) || isAdmin();
+
+        allow create: if isVerifiedUser()
+          && isValidId(athleteId)
+          && isValidId(docKey)
+          && isOwner(athleteId)
+          && isValidAthleteDocData(incoming(), athleteId)
+          && incoming().updatedAt == request.time
+          && existsAfter(/databases/$(database)/documents/athletes/$(athleteId));
+
+        allow update: if isVerifiedUser()
+          && isValidId(athleteId)
+          && isValidId(docKey)
+          && isOwner(athleteId)
+          && isValidAthleteDocData(incoming(), athleteId)
+          && incoming().ownerUid == existing().ownerUid
+          && incoming().docType == existing().docType
+          && incoming().updatedAt == request.time
+          && get(/databases/$(database)/documents/athletes/$(athleteId)).data.status != 'approved'
+          && incoming().diff(existing()).affectedKeys().hasOnly([
+            'fileName',
+            'mimeType',
+            'sizeBytes',
+            'sha256',
+            'previewDataUrl',
+            'updatedAt'
+          ]);
+
+        allow delete: if isValidId(athleteId) && isValidId(docKey) && isAdmin();
+      }
+    }
+
+    // Public Club Links managed by Admins
+    match /clubLinks/{linkId} {
+      allow get: if isValidId(linkId) && (resource.data.active == true || isAdmin());
+      allow list: if resource.data.active == true || isAdmin();
+
+      allow create: if isAdmin()
+        && isValidId(linkId)
+        && isValidClubLinkData(incoming())
+        && incoming().updatedAt == request.time;
+
+      allow update: if isAdmin()
+        && isValidId(linkId)
+        && isValidClubLinkData(incoming())
+        && incoming().updatedAt == request.time
+        && incoming().diff(existing()).affectedKeys().hasOnly([
+          'title',
+          'subtitle',
+          'category',
+          'categoryLabel',
+          'actionType',
+          'url',
+          'targetSectionId',
+          'modalId',
+          'featured',
+          'active',
+          'sortOrder',
+          'iconKey',
+          'updatedAt'
+        ]);
+
+      allow delete: if isValidId(linkId) && isAdmin();
+    }
+  }
+}
