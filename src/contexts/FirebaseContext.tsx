@@ -172,11 +172,24 @@ export function FirebaseProvider({ children }: { children: ReactNode }) {
     try {
       await signInWithPopup(auth, googleProvider);
     } catch (error) {
+      const code =
+        typeof error === 'object' && error !== null && 'code' in error
+          ? String((error as { code?: unknown }).code ?? '')
+          : '';
       const msg = error instanceof Error ? error.message : String(error);
-      if (msg.includes('popup-closed-by-user')) {
+      const combined = `${code} ${msg}`;
+
+      if (combined.includes('popup-closed-by-user') || combined.includes('cancelled-popup-request')) {
         setAuthError('تم إغلاق نافذة تسجيل الدخول قبل إكمال العملية.');
-      } else if (msg.includes('popup-blocked')) {
+      } else if (combined.includes('popup-blocked')) {
         setAuthError('يرجى السماح بالنوافذ المنبثقة لإكمال تسجيل الدخول بحساب جوجل.');
+      } else if (combined.includes('unauthorized-domain')) {
+        const host = typeof window !== 'undefined' ? window.location.hostname : '';
+        setAuthError(
+          `هذا النطاق (${host}) غير مصرح به بعد في إعدادات Firebase Authentication. أضِف النطاق ضمن Authorized domains ثم أعد المحاولة.`
+        );
+      } else if (combined.includes('network-request-failed')) {
+        setAuthError('تعذر الاتصال بالإنترنت لإكمال تسجيل الدخول. تحقق من الشبكة وحاول مجدداً.');
       } else {
         setAuthError('تعذر تسجيل الدخول حالياً. يرجى المحاولة مرة أخرى.');
       }
